@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+mysqlclient
+pymysql
+passlib
+python-jose[cryptography]
