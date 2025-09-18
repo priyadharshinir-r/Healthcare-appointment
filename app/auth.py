@@ -4,6 +4,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 import jwt
 from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import OAuth2PasswordRequestForm
 
 from .config import get_db  
 from .models import User     
@@ -66,16 +67,34 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     return new_user
 
 
-@router.post("/login")
-def login(user: UserLogin, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials"
-        )
+# @router.post("/login")
+# def login(user: UserLogin, db: Session = Depends(get_db)):
+#     db_user = db.query(User).filter(User.email == user.email).first()
+#     if not db_user:
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Invalid credentials"
+#         )
 
-    if not verify_password(user.password, db_user.password):
+#     if not verify_password(user.password, db_user.password):
+#         raise HTTPException(
+#             status_code=status.HTTP_401_UNAUTHORIZED,
+#             detail="Invalid credentials"
+#         )
+
+#     access_token = create_access_token(
+#         data={"sub": db_user.email, "role": db_user.role}
+#     )
+
+#     return {
+#         "access_token": access_token,
+#         "token_type": "bearer"
+#     }
+
+@router.post("/login")
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.email == form_data.username).first()
+    if not db_user or not verify_password(form_data.password, db_user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
@@ -84,8 +103,4 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     access_token = create_access_token(
         data={"sub": db_user.email, "role": db_user.role}
     )
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return {"access_token": access_token, "token_type": "bearer"}
